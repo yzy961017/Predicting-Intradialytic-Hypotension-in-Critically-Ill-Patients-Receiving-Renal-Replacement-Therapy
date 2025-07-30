@@ -119,7 +119,19 @@ def generate_shap_summary_plot(model_path, data_path, feature_list_path, output_
     print("生成SHAP摘要图（蜂窝图）...")
     try:
         # 为了在图上显示更清晰的标签，创建显示用的列名
-        display_names = [col.replace('_', ' ').title() for col in feature_names]
+        feature_display_mapping = {
+            'admission_age': 'Age',
+            'mild_liver_disease': 'Liver Disease',
+            'diabetes_without_cc': 'Diabetes',
+            'malignant_cancer': 'Cancer'
+        }
+        
+        display_names = []
+        for col in feature_names:
+            if col in feature_display_mapping:
+                display_names.append(feature_display_mapping[col])
+            else:
+                display_names.append(col.replace('_', ' ').title())
         
         plt.figure(figsize=(10, 8))
         shap.summary_plot(

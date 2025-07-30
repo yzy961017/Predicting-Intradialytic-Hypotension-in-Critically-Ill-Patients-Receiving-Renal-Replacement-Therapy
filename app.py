@@ -156,7 +156,7 @@ def preprocess_data(data, feature_names):
         'Peripheral_vascular_disease': 'peripheral_vascular_disease',
         'Dementia': 'dementia',
         'Chronic_pulmonary_disease': 'chronic_pulmonary_disease',
-        'Liver_disease': 'mild_liver_disease',
+        'Liver Disease': 'mild_liver_disease',
         'Diabetes': 'diabetes_without_cc',
         'Cancer': 'malignant_cancer',
         'Vasoactive_drugs': 'vasoactive_drugs',
@@ -246,15 +246,14 @@ def sidebar_input_features(feature_names):
         ('peripheral_vascular_disease', 'Peripheral Vascular Disease', 'selectbox', ('Yes', 'No'), None, None, None),
         ('dementia', 'Dementia', 'selectbox', ('Yes', 'No'), None, None, None),
         ('chronic_pulmonary_disease', 'Chronic Pulmonary Disease', 'selectbox', ('Yes', 'No'), None, None, None),
-        ('mild_liver_disease', 'Mild Liver Disease', 'selectbox', ('Yes', 'No'), None, None, None),
-        ('diabetes_without_cc', 'Diabetes without Complications', 'selectbox', ('Yes', 'No'), None, None, None),
-        ('malignant_cancer', 'Malignant Cancer', 'selectbox', ('Yes', 'No'), None, None, None),
+        ('mild_liver_disease', 'Liver Disease', 'selectbox', ('Yes', 'No'), None, None, None),
+        ('diabetes_without_cc', 'Diabetes', 'selectbox', ('Yes', 'No'), None, None, None),
+        ('malignant_cancer', 'Cancer', 'selectbox', ('Yes', 'No'), None, None, None),
         ('vasoactive_drugs', 'Vasoactive Drugs', 'selectbox', ('Yes', 'No'), None, None, None),
         ('ph', 'Latest pH Value', 'slider', 7.00, 8.00, 7.40, 0.01),
         ('lactate', 'Latest Lactate Value (mmol/L)', 'slider', 0.0, 25.0, 2.0, 0.1),
         ('map', 'Mean Arterial Pressure (mmHg)', 'slider', 0, 250, 80, 1),
         ('sap', 'Systolic Arterial Pressure (mmHg)', 'slider', 0, 300, 120, 1),
-        ('icu_to_rrt_hours', 'ICU to RRT Hours', 'slider', 0, 720, 24, 1),
         ('rrt_type', 'RRT Modality', 'selectbox', ('CRRT', 'IHD'), None, None, None),
     ]
     
@@ -304,8 +303,21 @@ def display_global_explanations(model, X_train, shap_image):
     with f2:
         st.write('**SHAP Dependence Plot**')
         
-        # Clean feature names for display
-        feature_options = [name.replace('_', ' ').title() for name in shap_data_df.columns]
+        # Clean feature names for display with custom mapping
+        feature_display_mapping = {
+            'admission_age': 'Age',
+            'mild_liver_disease': 'Liver Disease',
+            'diabetes_without_cc': 'Diabetes',
+            'malignant_cancer': 'Cancer'
+        }
+        
+        feature_options = []
+        for name in shap_data_df.columns:
+            if name in feature_display_mapping:
+                feature_options.append(feature_display_mapping[name])
+            else:
+                feature_options.append(name.replace('_', ' ').title())
+        
         feature_mapping = {clean: orig for clean, orig in zip(feature_options, shap_data_df.columns)}
         
         # Find most important feature as default option
@@ -367,9 +379,23 @@ def display_local_explanations(model, user_input_df, X_train):
         feature_names = user_input_df.columns.tolist()
         feature_values = user_input_df.iloc[0].values
         
-        # Create explanation dataframe
+        # Create explanation dataframe with custom feature mapping
+        feature_display_mapping = {
+            'admission_age': 'Age',
+            'mild_liver_disease': 'Liver Disease',
+            'diabetes_without_cc': 'Diabetes',
+            'malignant_cancer': 'Cancer'
+        }
+        
+        display_names = []
+        for name in feature_names:
+            if name in feature_display_mapping:
+                display_names.append(feature_display_mapping[name])
+            else:
+                display_names.append(name.replace('_', ' ').title())
+        
         explanation_df = pd.DataFrame({
-            'Feature': [name.replace('_', ' ').title() for name in feature_names],
+            'Feature': display_names,
             'Value': feature_values,
             'SHAP_Value': shap_values_to_plot
         })
@@ -422,8 +448,22 @@ def display_local_explanations(model, user_input_df, X_train):
         feature_values = user_input_df.iloc[0].values
         
         # Calculate feature contributions using SHAP values we already computed
+        feature_display_mapping = {
+            'admission_age': 'Age',
+            'mild_liver_disease': 'Liver Disease',
+            'diabetes_without_cc': 'Diabetes',
+            'malignant_cancer': 'Cancer'
+        }
+        
+        display_names = []
+        for name in feature_names:
+            if name in feature_display_mapping:
+                display_names.append(feature_display_mapping[name])
+            else:
+                display_names.append(name.replace('_', ' ').title())
+        
         feature_contributions = pd.DataFrame({
-            'Feature': [name.replace('_', ' ').title() for name in feature_names],
+            'Feature': display_names,
             'Value': feature_values,
             'SHAP_Contribution': shap_values_to_plot
         })

@@ -159,6 +159,7 @@ def train_and_save_model(train_data_path: str, test_data_path: str, model_output
     print(f"训练集正例比例: {y_train.mean():.3f}, 测试集正例比例: {y_test.mean():.3f}")
 
     # GBM的超参数空间
+    # 保留原有参数空间定义（可留作注释或后续扩展）
     gbm_param_dist = {
         'n_estimators': range(50, 201, 50),
         'max_depth': range(3, 8),
@@ -168,27 +169,21 @@ def train_and_save_model(train_data_path: str, test_data_path: str, model_output
         'min_samples_split': range(100, 201, 50)
     }
 
-    print("开始进行超参数搜索...")
-    model = GradientBoostingClassifier(random_state=42)
-    cv = KFold(n_splits=5, shuffle=True, random_state=42)
-    
-    random_search = RandomizedSearchCV(
-        model,
-        param_distributions=gbm_param_dist,
-        n_iter=30,
-        scoring="roc_auc",
-        n_jobs=-1,
-        cv=cv,
-        random_state=42,
-        verbose=1
-    )
-    
-    random_search.fit(X_train, y_train)
-    
-    best_params = random_search.best_params_
-    print(f"搜索完成。最佳超参数: {best_params}")
+    print("跳过超参数搜索，直接使用 R 中的最佳超参数进行模型训练...")
 
-    best_model = random_search.best_estimator_
+    # ✅ 固定 R 中提供的最佳参数
+    best_params = {
+        'n_estimators': 50,  # 相当于 n.trees
+        'max_depth': 3,  # 相当于 interaction.depth
+        'learning_rate': 0.1,  # 相当于 shrinkage
+        'min_samples_leaf': 10  # 相当于 n.minobsinnode
+        # 'subsample' 和 'min_samples_split' 未指定，使用默认
+    }
+    print(f"使用固定超参数: {best_params}")
+    # ✅ 模型训练与验证
+    best_model = GradientBoostingClassifier(random_state=42, **best_params)
+    best_model.fit(X_train, y_train)
+
     y_pred = best_model.predict(X_test)
     y_pred_proba = best_model.predict_proba(X_test)[:, 1]
 
@@ -200,7 +195,7 @@ def train_and_save_model(train_data_path: str, test_data_path: str, model_output
 
     print("验证完成。使用最佳参数在【完整训练集】上训练最终模型...")
     final_gbm_model = GradientBoostingClassifier(
-        random_state=42, 
+        random_state=42,
         **best_params
     )
     final_gbm_model.fit(X_train, y_train)
@@ -219,11 +214,12 @@ def train_and_save_model(train_data_path: str, test_data_path: str, model_output
     except Exception as e:
         print(f"模型或特征列表保存失败: {e}")
 
+
 if __name__ == '__main__':
     # 定义文件路径
     TRAIN_FILE = 'train.csv'
     TEST_FILE = 'test.csv'
     MODEL_FILE = 'hypotension_model.joblib'
-    
+
     # 执行训练流程
     train_and_save_model(TRAIN_FILE, TEST_FILE, MODEL_FILE)
